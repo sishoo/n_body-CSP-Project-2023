@@ -16,7 +16,7 @@ pub struct Vec2 {
 #[derive(Copy, Clone, Debug)]
 pub struct Rect {
     nw: Vec2,
-    width: f32,
+    pub width: f32,
     height: f32
 }
 
@@ -42,6 +42,10 @@ impl Node {
 
     pub fn insert(&mut self, body: Planet) {
         self.total_mass += body.mass;
+        // let new_pos_sum = self.center_of_mass * self.total_mass + body.pos * body.mass;
+        // self.center_of_mass = new_pos_sum / self.total_mass;
+
+
 
         /*
         if there is children
@@ -77,35 +81,35 @@ impl Node {
         self.children = Some(
             Box::new([
                 Some( //q1
-                    Box::new(
-                        Node::new(
-                            Rect::new(origin, width / 2.0, height / 2.0)
-                        )
-                    )
+                      Box::new(
+                          Node::new(
+                              Rect::new(origin, width / 2.0, height / 2.0)
+                          )
+                      )
                 ),
                 Some(  //q2
-                    Box::new(
-                        Node::new(
-                            Rect::new(
-                                Vec2::new(origin.x + width / 2.0, origin.y), width / 2.0, height / 2.0)
-                        )
-                    )
+                       Box::new(
+                           Node::new(
+                               Rect::new(
+                                   Vec2::new(origin.x + width / 2.0, origin.y), width / 2.0, height / 2.0)
+                           )
+                       )
                 ),
                 Some(  //q3
-                    Box::new(
-                        Node::new(
-                            Rect::new(
-                                Vec2::new(origin.x, origin.y + height / 2.0), width / 2.0, height / 2.0)
-                        )
-                    )
+                       Box::new(
+                           Node::new(
+                               Rect::new(
+                                   Vec2::new(origin.x, origin.y + height / 2.0), width / 2.0, height / 2.0)
+                           )
+                       )
                 ),
                 Some(  //q4
-                    Box::new(
-                        Node::new(
-                            Rect::new(
-                                Vec2::new(origin.x + width / 2.0, origin.y + height / 2.0), width / 2.0, height / 2.0)
-                        )
-                    )
+                       Box::new(
+                           Node::new(
+                               Rect::new(
+                                   Vec2::new(origin.x + width / 2.0, origin.y + height / 2.0), width / 2.0, height / 2.0)
+                           )
+                       )
                 )
             ]
             )
@@ -144,5 +148,4 @@ impl Rect {
             self.nw.y < point.y && point.y < self.nw.y + self.height
     }
 }
-
 
