@@ -1,10 +1,9 @@
 use ggez::glam::Vec2;
-
 use crate::Planet;
 
-
-
 const MAX_POINTS: usize = 1;
+const APPROXIMATION_DISTANCE_LIMIT: f32 = 0.5;
+const G: f32 = 6.67430e-11;
 
 /*
 pub struct Vec2 {
@@ -30,25 +29,51 @@ pub struct Node {
 }
 
 impl Node {
+    pub fn update_pos(&mut self, planet: &mut Planet) {
+        let taxicab_distance = planet.pos - self.center_of_mass;
+        let distance = (taxicab_distance.x * taxicab_distance.x + taxicab_distance.y * taxicab_distance.y).sqrt();
+
+        if self.children.is_none() && !self.bounds.bounds_contains(&planet.pos) {
+            let taxicab_distance = planet.pos - self.contents[0].pos;
+            let distance = (taxicab_distance.x * taxicab_distance.x + taxicab_distance.y * taxicab_distance.y).sqrt();
+            let net_force = G * planet.mass * self.contents[0].mass / (distance * distance);
+            let force_components = Vec2::new(net_force * (taxicab_distance.x / distance), net_force * (taxicab_distance.y / distance));
+            let acceleration_components = force_components / planet.mass;
+            planet.velocity += acceleration_components;
+            planet.pos += planet.velocity;
+        } else if self.bounds.width / distance < APPROXIMATION_DISTANCE_LIMIT {
+            let taxicab_distance = planet.pos - self.center_of_mass;
+            let distance = (taxicab_distance.x * taxicab_distance.x + taxicab_distance.y * taxicab_distance.y).sqrt();
+            let net_force = G * planet.mass * self.total_mass / (distance * distance);
+            let force_components = Vec2::new(net_force * (taxicab_distance.x / distance), net_force * (taxicab_distance.y / distance));
+            let acceleration_components = force_components / planet.mass;
+            planet.velocity += acceleration_components;
+            planet.pos += planet.velocity;
+        } else {
+            for child in self.children.as_mut().unwrap().iter_mut() {
+                child.as_mut().unwrap().update_pos(planet);
+            }
+        }
+    }
+
+
+
     pub fn new(bounds: Rect) -> Self {
         Node {
             contents: Vec::new(),
             children: None,
             bounds: bounds,
             total_mass: 0.0,
-            center_of_mass: Vec2::new(500.0, 400.0)
+            center_of_mass: Vec2::new(0.0, 0.0)
         }
     }
 
     pub fn insert(&mut self, body: Planet) {
         self.total_mass += body.mass;
-        // let new_pos_sum = self.center_of_mass * self.total_mass + body.pos * body.mass;
-        // self.center_of_mass = new_pos_sum / self.total_mass;
-
-
+        self.center_of_mass = body.mass * body.pos + self.center_of_mass / self.total_mass;
 
         /*
-        if there is children
+        if there is no children
         it adds the point
         if over the limit
         it subdivides
@@ -148,4 +173,6 @@ impl Rect {
             self.nw.y < point.y && point.y < self.nw.y + self.height
     }
 }
+
+
 
