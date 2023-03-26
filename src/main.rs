@@ -49,21 +49,9 @@ impl MainState {
 
 impl event::EventHandler for MainState {
     fn update(&mut self, ctx: &mut Context) -> GameResult {
-        for planet in &mut self.planets {
-            println!("velo1 {}", planet.velocity);
-            println!("pos1 {}", planet.pos);
-
-            self.quad_tree.update_pos(planet);
-
-            println!("velo2 {}", planet.velocity);
-            println!("pos2 {}", planet.pos);
-            println!("________________________________");
-        }
-        println!("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
-        println!("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
-        println!("CYCLE DONE");
-        println!("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
-        println!("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+        for planet in &mut self.planets {          
+            self.quad_tree.update_pos(planet);            
+        }      
         Ok(())
     }
 
