@@ -4,12 +4,11 @@ use ggez::glam::*;
 use ggez::graphics::{self, Color, Vertex, InstanceArray};
 use rand::Rng;
 use std::time::{Duration, Instant};
-use std::mem;
 
 mod quad_tree;
 use quad_tree::{Node, Rect};
 
-const NUM_BODIES: usize = 3;
+const NUM_BODIES: usize = 500;
 
 struct MainState {
     planets: Vec<Planet>,
@@ -30,15 +29,13 @@ impl MainState {
         let mut quad_tree = Node::new(Rect::new(Vec2::new(0.0, 0.0), 1_000.0, 800.0));
         for _ in 0..NUM_BODIES {
             let planet = Planet {
-                mass: rng.gen_range(1.0..1_000_000.0),
+                mass: rng.gen_range(1.0..1_000.0),
                 pos: Vec2::new(rng.gen_range(0.0..1_000.0), rng.gen_range(0.0..800.0)),
                 velocity: Vec2::new(0.0, 0.0)
             };
-
             planets.push(planet.clone());
             quad_tree.insert(planet);
         }
-        println!("{:?}", quad_tree);
         MainState {
             planets: planets,
             quad_tree: quad_tree,
@@ -49,9 +46,13 @@ impl MainState {
 
 impl event::EventHandler for MainState {
     fn update(&mut self, ctx: &mut Context) -> GameResult {
-        for planet in &mut self.planets {          
-            self.quad_tree.update_pos(planet);            
-        }      
+        for planet in &mut self.planets {
+            self.quad_tree.update_pos(planet);
+        }
+        self.quad_tree = Node::new(Rect::new(Vec2::new(0.0, 0.0), 1_000.0, 800.0));
+        for planet in &mut self.planets {
+            self.quad_tree.insert(*planet);
+        }
         Ok(())
     }
 
