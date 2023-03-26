@@ -3,7 +3,7 @@ use crate::Planet;
 
 const MAX_POINTS: usize = 1;
 const APPROXIMATION_DISTANCE_LIMIT: f32 = 0.5;
-const G: f32 = 6.67430e-11;
+const G: f32 = 6.67430e-11 * 10000000.0;
 
 /*
 pub struct Vec2 {
@@ -14,9 +14,9 @@ pub struct Vec2 {
 
 #[derive(Copy, Clone, Debug)]
 pub struct Rect {
-    nw: Vec2,
+    pub nw: Vec2,
     pub width: f32,
-    height: f32
+    pub height: f32
 }
 
 #[derive(Debug)]
@@ -30,10 +30,11 @@ pub struct Node {
 
 impl Node {
     pub fn update_pos(&mut self, planet: &mut Planet) {
+        //println!("{}", self.center_of_mass);
         let taxicab_distance = planet.pos - self.center_of_mass;
         let distance = (taxicab_distance.x * taxicab_distance.x + taxicab_distance.y * taxicab_distance.y).sqrt();
 
-        if self.children.is_none() && !self.bounds.bounds_contains(&planet.pos) {
+        if self.children.is_none() && !self.bounds.bounds_contains(&planet.pos) && self.contents.len() > 0 {
             let taxicab_distance = planet.pos - self.contents[0].pos;
             let distance = (taxicab_distance.x * taxicab_distance.x + taxicab_distance.y * taxicab_distance.y).sqrt();
             let net_force = G * planet.mass * self.contents[0].mass / (distance * distance);
@@ -50,13 +51,13 @@ impl Node {
             planet.velocity += acceleration_components;
             planet.pos += planet.velocity;
         } else {
-            for child in self.children.as_mut().unwrap().iter_mut() {
-                child.as_mut().unwrap().update_pos(planet);
+            if self.children.is_some() {
+                for child in self.children.as_mut().unwrap().iter_mut() {
+                    child.as_mut().unwrap().update_pos(planet);
+                }
             }
         }
     }
-
-
 
     pub fn new(bounds: Rect) -> Self {
         Node {
@@ -70,7 +71,7 @@ impl Node {
 
     pub fn insert(&mut self, body: Planet) {
         self.total_mass += body.mass;
-        self.center_of_mass = body.mass * body.pos + self.center_of_mass / self.total_mass;
+        self.center_of_mass = ((body.mass * body.pos) + (self.center_of_mass * (self.total_mass - body.mass))) / self.total_mass;
 
         /*
         if there is no children
