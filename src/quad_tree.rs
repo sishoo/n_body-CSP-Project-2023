@@ -3,7 +3,7 @@ use crate::Planet;
 
 const MAX_POINTS: usize = 1;
 const APPROXIMATION_DISTANCE_LIMIT: f32 = 0.5;
-const G: f32 = 6.67430e-11 * 10000000.0;
+const G: f32 = 6.67430e-11;
 
 /*
 pub struct Vec2 {
@@ -35,21 +35,25 @@ impl Node {
         let distance = (taxicab_distance.x * taxicab_distance.x + taxicab_distance.y * taxicab_distance.y).sqrt();
 
         if self.children.is_none() && !self.bounds.bounds_contains(&planet.pos) && self.contents.len() > 0 {
+            self.remove(planet);
             let taxicab_distance = planet.pos - self.contents[0].pos;
             let distance = (taxicab_distance.x * taxicab_distance.x + taxicab_distance.y * taxicab_distance.y).sqrt();
             let net_force = G * planet.mass * self.contents[0].mass / (distance * distance);
             let force_components = Vec2::new(net_force * (taxicab_distance.x / distance), net_force * (taxicab_distance.y / distance));
             let acceleration_components = force_components / planet.mass;
             planet.velocity += acceleration_components;
-            planet.pos += planet.velocity;
+            planet.pos -= planet.velocity;
+            self.insert(*planet);
         } else if self.bounds.width / distance < APPROXIMATION_DISTANCE_LIMIT {
+            self.remove(planet);
             let taxicab_distance = planet.pos - self.center_of_mass;
             let distance = (taxicab_distance.x * taxicab_distance.x + taxicab_distance.y * taxicab_distance.y).sqrt();
             let net_force = G * planet.mass * self.total_mass / (distance * distance);
             let force_components = Vec2::new(net_force * (taxicab_distance.x / distance), net_force * (taxicab_distance.y / distance));
             let acceleration_components = force_components / planet.mass;
             planet.velocity += acceleration_components;
-            planet.pos += planet.velocity;
+            planet.pos -= planet.velocity;
+            self.insert(*planet);
         } else {
             if self.children.is_some() {
                 for child in self.children.as_mut().unwrap().iter_mut() {
@@ -73,16 +77,6 @@ impl Node {
         self.total_mass += body.mass;
         self.center_of_mass = ((body.mass * body.pos) + (self.center_of_mass * (self.total_mass - body.mass))) / self.total_mass;
 
-        /*
-        if there is no children
-        it adds the point
-        if over the limit
-        it subdivides
-        if it does have a point in it
-        for each child it sees if the child contains the point
-        pushes point to child
-        breaks out because we already found the node that contains it
-         */
 
         if self.children.is_none() {
             self.contents.push(body);
@@ -103,17 +97,16 @@ impl Node {
         let origin = self.bounds.nw;
         let width = self.bounds.width;
         let height = self.bounds.height;
-
         self.children = Some(
             Box::new([
-                Some( //q1
+                Some(
                       Box::new(
                           Node::new(
                               Rect::new(origin, width / 2.0, height / 2.0)
                           )
                       )
                 ),
-                Some(  //q2
+                Some(
                        Box::new(
                            Node::new(
                                Rect::new(
@@ -121,7 +114,7 @@ impl Node {
                            )
                        )
                 ),
-                Some(  //q3
+                Some(
                        Box::new(
                            Node::new(
                                Rect::new(
@@ -129,7 +122,7 @@ impl Node {
                            )
                        )
                 ),
-                Some(  //q4
+                Some(
                        Box::new(
                            Node::new(
                                Rect::new(
@@ -140,12 +133,6 @@ impl Node {
             ]
             )
         );
-
-        /*
-        for every point in the contents, we go through each child
-        and see if the point fits in the childs bounds
-        if it does, we push the point to the childs contents
-         */
         for planet in &self.contents {
             for child in self.children.as_mut().unwrap().iter_mut() {
                 if child.as_ref().unwrap().bounds.bounds_contains(&planet.pos) {
@@ -155,6 +142,26 @@ impl Node {
             }
         }
         self.contents.clear();
+    }
+
+    fn remove(&mut self, planet: &Planet) {
+        if self.bounds.bounds_contains(&planet.pos) {
+            let index_of_value = match self.contents.iter().position(|&element| element.pos == planet.pos) {
+                Some(i) => i,
+                None => return,
+            };
+            self.contents.remove(index_of_value);
+            self.total_mass -= planet.mass;
+            self.center_of_mass = self.center_of_mass - (planet.pos * planet.mass);
+
+        } else if self.children.is_some() {
+            for child in self.children.as_mut().unwrap().iter_mut() {
+                if child.as_ref().unwrap().bounds.bounds_contains(&planet.pos) {
+                    child.as_mut().unwrap().remove(planet);
+                    break;
+                }
+            }
+        }
     }
 }
 
@@ -174,6 +181,5 @@ impl Rect {
             self.nw.y < point.y && point.y < self.nw.y + self.height
     }
 }
-
 
 
