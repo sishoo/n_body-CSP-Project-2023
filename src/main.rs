@@ -8,7 +8,7 @@ use std::time::{Duration, Instant};
 mod quad_tree;
 use quad_tree::{Node, Rect};
 
-const NUM_BODIES: usize = 500;
+const NUM_BODIES: usize = 200;
 
 struct MainState {
     planets: Vec<Planet>,
@@ -26,10 +26,11 @@ impl MainState {
     pub fn new() -> Self {
         let mut rng = rand::thread_rng();
         let mut planets = Vec::new();
-        let mut quad_tree = Node::new(Rect::new(Vec2::new(0.0, 0.0), 1_000.0, 800.0));
+        let mut quad_tree = Node::new(Rect::new(Vec2::new(0.0, 0.0), 1000.0, 800.0));
         for _ in 0..NUM_BODIES {
             let planet = Planet {
-                mass: rng.gen_range(1.0..1_000.0),
+                //mass: rng.gen_range(1.0..1_000_000_000.0),
+                mass: 10000000.0,
                 pos: Vec2::new(rng.gen_range(0.0..1_000.0), rng.gen_range(0.0..800.0)),
                 velocity: Vec2::new(0.0, 0.0)
             };
@@ -46,13 +47,11 @@ impl MainState {
 
 impl event::EventHandler for MainState {
     fn update(&mut self, ctx: &mut Context) -> GameResult {
+        let now = Instant::now();
         for planet in &mut self.planets {
             self.quad_tree.update_pos(planet);
         }
-        self.quad_tree = Node::new(Rect::new(Vec2::new(0.0, 0.0), 1_000.0, 800.0));
-        for planet in &mut self.planets {
-            self.quad_tree.insert(*planet);
-        }
+        println!("{:?}", now.elapsed());
         Ok(())
     }
 
@@ -89,4 +88,3 @@ fn main() -> GameResult {
     event::run(ctx, event_loop, state);
     Ok(())
 }
-
