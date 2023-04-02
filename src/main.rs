@@ -8,7 +8,7 @@ use std::time::{Duration, Instant};
 mod quad_tree;
 use quad_tree::{Node, Rect};
 
-const NUM_BODIES: usize = 200;
+const NUM_BODIES: usize = 300;
 
 struct MainState {
     planets: Vec<Planet>,
@@ -25,18 +25,20 @@ pub struct Planet {
 impl MainState {
     pub fn new() -> Self {
         let mut rng = rand::thread_rng();
-        let mut planets = Vec::new();
+        let mut planets: Vec<Planet> = Vec::new();
         let mut quad_tree = Node::new(Rect::new(Vec2::new(0.0, 0.0), 1000.0, 800.0));
         for _ in 0..NUM_BODIES {
             let planet = Planet {
-                //mass: rng.gen_range(1.0..1_000_000_000.0),
-                mass: 10000000.0,
+                mass: rng.gen_range(1.0..1_000_000_000.0),
+                // mass: 100000000.0,
                 pos: Vec2::new(rng.gen_range(0.0..1_000.0), rng.gen_range(0.0..800.0)),
                 velocity: Vec2::new(0.0, 0.0)
             };
             planets.push(planet.clone());
             quad_tree.insert(planet);
         }
+
+       // println!("{:?}", quad_tree);
         MainState {
             planets: planets,
             quad_tree: quad_tree,
@@ -48,10 +50,8 @@ impl MainState {
 impl event::EventHandler for MainState {
     fn update(&mut self, ctx: &mut Context) -> GameResult {
         let now = Instant::now();
-        for planet in &mut self.planets {
-            self.quad_tree.update_pos(planet);
-        }
-        println!("{:?}", now.elapsed());
+        self.planets.iter_mut().for_each(|planet| self.quad_tree.update_pos(planet));
+        // println!("{:?}", now.elapsed());
         Ok(())
     }
 
@@ -75,10 +75,6 @@ impl event::EventHandler for MainState {
         Ok(())
     }
 }
-
-
-
-
 fn main() -> GameResult {
     let context_builder = ggez::ContextBuilder::new("orbit", "Mac")
         .window_setup(ggez::conf::WindowSetup::default().title("N body simulator"))
