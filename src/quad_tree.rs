@@ -12,7 +12,7 @@ pub struct Vec2 {
 }
  */
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Debug)]
 pub struct Rect {
     pub nw: Vec2,
     pub width: f32,
@@ -30,10 +30,8 @@ pub struct Node {
 
 impl Node {
     pub fn update_pos(&mut self, planet: &mut Planet) {
-        //println!("{}", self.center_of_mass);
         let taxicab_distance = planet.pos - self.center_of_mass;
         let distance = (taxicab_distance.x * taxicab_distance.x + taxicab_distance.y * taxicab_distance.y).sqrt();
-
         if self.children.is_none() && !self.bounds.bounds_contains(&planet.pos) && self.contents.len() > 0 {
             self.remove(planet);
             let taxicab_distance = planet.pos - self.contents[0].pos;
@@ -77,7 +75,6 @@ impl Node {
         self.total_mass += body.mass;
         self.center_of_mass = ((body.mass * body.pos) + (self.center_of_mass * (self.total_mass - body.mass))) / self.total_mass;
 
-
         if self.children.is_none() {
             self.contents.push(body);
             if self.contents.len() > MAX_POINTS {
@@ -100,35 +97,35 @@ impl Node {
         self.children = Some(
             Box::new([
                 Some(
-                      Box::new(
-                          Node::new(
-                              Rect::new(origin, width / 2.0, height / 2.0)
-                          )
-                      )
+                    Box::new(
+                        Node::new(
+                            Rect::new(origin, width / 2.0, height / 2.0)
+                        )
+                    )
                 ),
                 Some(
-                       Box::new(
-                           Node::new(
-                               Rect::new(
-                                   Vec2::new(origin.x + width / 2.0, origin.y), width / 2.0, height / 2.0)
-                           )
-                       )
+                    Box::new(
+                        Node::new(
+                            Rect::new(
+                                Vec2::new(origin.x + width / 2.0, origin.y), width / 2.0, height / 2.0)
+                        )
+                    )
                 ),
                 Some(
-                       Box::new(
-                           Node::new(
-                               Rect::new(
-                                   Vec2::new(origin.x, origin.y + height / 2.0), width / 2.0, height / 2.0)
-                           )
-                       )
+                    Box::new(
+                        Node::new(
+                            Rect::new(
+                                Vec2::new(origin.x, origin.y + height / 2.0), width / 2.0, height / 2.0)
+                        )
+                    )
                 ),
                 Some(
-                       Box::new(
-                           Node::new(
-                               Rect::new(
-                                   Vec2::new(origin.x + width / 2.0, origin.y + height / 2.0), width / 2.0, height / 2.0)
-                           )
-                       )
+                    Box::new(
+                        Node::new(
+                            Rect::new(
+                                Vec2::new(origin.x + width / 2.0, origin.y + height / 2.0), width / 2.0, height / 2.0)
+                        )
+                    )
                 )
             ]
             )
@@ -145,15 +142,18 @@ impl Node {
     }
 
     fn remove(&mut self, planet: &Planet) {
-        if self.bounds.bounds_contains(&planet.pos) {
-            let index_of_value = match self.contents.iter().position(|&element| element.pos == planet.pos) {
-                Some(i) => i,
-                None => return,
-            };
-            self.contents.remove(index_of_value);
+        // if self.bounds.bounds_contains(&planet.pos) {
+        //     let index_of_value = match self.contents.iter().position(|&element| element.pos == planet.pos) {
+        //         Some(i) => i,
+        //         None => return,
+        //     };
+        //     self.contents.remove(index_of_value);
+        //     self.total_mass -= planet.mass;
+        //     self.center_of_mass -= planet.mass * planet.pos;
+        if let Some(pos) = self.contents.iter().position(|x| x.pos == planet.pos) {
+            self.contents.remove(pos);
             self.total_mass -= planet.mass;
-            self.center_of_mass = self.center_of_mass - (planet.pos * planet.mass);
-
+            self.center_of_mass -= planet.mass * planet.pos;
         } else if self.children.is_some() {
             for child in self.children.as_mut().unwrap().iter_mut() {
                 if child.as_ref().unwrap().bounds.bounds_contains(&planet.pos) {
@@ -161,6 +161,7 @@ impl Node {
                     break;
                 }
             }
+
         }
     }
 }
@@ -181,5 +182,3 @@ impl Rect {
             self.nw.y < point.y && point.y < self.nw.y + self.height
     }
 }
-
-
