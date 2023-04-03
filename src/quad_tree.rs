@@ -4,6 +4,7 @@ use crate::Planet;
 const MAX_POINTS: usize = 1;
 const APPROXIMATION_DISTANCE_LIMIT: f32 = 0.5;
 const G: f32 = 6.67430e-11;
+const DELTA_TIME: f32 = 1.0;
 
 /*
 pub struct Vec2 {
@@ -33,22 +34,29 @@ impl Node {
         let taxicab_distance = planet.pos - self.center_of_mass;
         let distance = (taxicab_distance.x * taxicab_distance.x + taxicab_distance.y * taxicab_distance.y).sqrt();
         if self.children.is_none() && !self.bounds.bounds_contains(&planet.pos) && self.contents.len() > 0 {
-            self.remove(planet);
             let taxicab_distance = planet.pos - self.contents[0].pos;
             let distance = (taxicab_distance.x * taxicab_distance.x + taxicab_distance.y * taxicab_distance.y).sqrt();
             let net_force = G * planet.mass * self.contents[0].mass / (distance * distance);
             let force_components = Vec2::new(net_force * (taxicab_distance.x / distance), net_force * (taxicab_distance.y / distance));
             let acceleration_components = force_components / planet.mass;
-            planet.velocity += acceleration_components;
-            planet.pos -= planet.velocity;
+            planet.velocity += acceleration_components * DELTA_TIME;
+            if (distance - planet.velocity).x <= 3.0 || (distance - planet.velocity).y <= 3.0 {
+                let new_velocity = (planet.mass * planet.velocity + self.contents[0].mass * self.contents[0].velocity) / (planet.mass + self.contents[0].mass);
+                let new_pos = planet.pos + new_velocity * DELTA_TIME;
+                self.remove(planet);
+                planet.pos = new_pos;
+            } else {
+                self.remove(planet);
+                planet.pos -= planet.velocity * DELTA_TIME;
+            }
             self.insert(*planet);
         } else if self.bounds.width / distance < APPROXIMATION_DISTANCE_LIMIT {
-            self.remove(planet);
             let taxicab_distance = planet.pos - self.center_of_mass;
             let distance = (taxicab_distance.x * taxicab_distance.x + taxicab_distance.y * taxicab_distance.y).sqrt();
             let net_force = G * planet.mass * self.total_mass / (distance * distance);
             let force_components = Vec2::new(net_force * (taxicab_distance.x / distance), net_force * (taxicab_distance.y / distance));
             let acceleration_components = force_components / planet.mass;
+            self.remove(planet);
             planet.velocity += acceleration_components;
             planet.pos -= planet.velocity;
             self.insert(*planet);
@@ -178,7 +186,7 @@ impl Rect {
     }
 
     pub fn bounds_contains(&self, point: &Vec2) -> bool {
-        self.nw.x < point.x && point.x < self.nw.x + self.width &&
-            self.nw.y < point.y && point.y < self.nw.y + self.height
+        self.nw.x <= point.x && point.x <= self.nw.x + self.width &&
+            self.nw.y <= point.y && point.y <= self.nw.y + self.height
     }
 }
