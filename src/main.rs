@@ -4,12 +4,13 @@ use ggez::glam::*;
 use ggez::graphics::{self, Color, Vertex, InstanceArray};
 use rand::Rng;
 use std::time::{Duration, Instant};
-use ggez::timer;
+use std::io::stdin;
+
 
 mod quad_tree;
 use quad_tree::{Node, Rect};
 
-const NUM_BODIES: usize = 2;
+const NUM_BODIES: usize = 100;
 
 struct MainState {
     planets: Vec<Planet>,
@@ -23,39 +24,34 @@ pub struct Planet {
     pub velocity: Vec2,
 }
 
+impl Planet {
+    fn new(mass: f32, pos: Vec2, velocity: Vec2) -> Self {
+        Planet {
+            mass: mass,
+            pos: pos,
+            velocity: velocity
+        }
+    }
+
+    fn collides_with(&self, planet1: &Planet, planet2: &Planet) -> bool {
+        true
+    }
+}
+
 impl MainState {
-    pub fn new() -> Self {
+    pub fn new(num_bodies: usize) -> Self {
         let mut rng = rand::thread_rng();
         let mut planets: Vec<Planet> = Vec::new();
         let mut quad_tree = Node::new(Rect::new(Vec2::new(0.0, 0.0), 1000.0, 800.0));
-        // for _ in 0..NUM_BODIES {
-        //     let planet = Planet {
-        //         mass: rng.gen_range(1.0..1_000_000_000.0),
-        //         // mass: 100000000.0,
-        //         pos: Vec2::new(rng.gen_range(0.0..1_000.0), rng.gen_range(0.0..800.0)),
-        //         velocity: Vec2::new(0.0, 0.0)
-        //     };
-        //     planets.push(planet.clone());
-        //     quad_tree.insert(planet);
-        // }
-        let p1 = Planet {
-            mass: 100_000_000.0,
-            pos: Vec2::new(250.0, 400.0),
-            velocity: Vec2::new(0.0, 0.0)
-        };
-        let p2 = Planet {
-            mass: 100_000_000.0,
-            pos: Vec2::new(750.0, 400.0),
-            velocity: Vec2::new(0.0, 0.0)
-        };
-
-        planets.push(p1);
-        quad_tree.insert(p1);
-        planets.push(p2);
-        quad_tree.insert(p2);
-
-
-        println!("{:?}", quad_tree);
+        for _ in 0..num_bodies {
+            let planet = Planet::new(
+                rng.gen_range(1.0..1_000_000_000.0),
+                Vec2::new(rng.gen_range(0.0..1_000.0), rng.gen_range(0.0..800.0)),
+                Vec2::new(0.0, 0.0),
+            );
+            planets.push(planet.clone());
+            quad_tree.insert(planet);
+        }
         MainState {
             planets: planets,
             quad_tree: quad_tree,
@@ -66,18 +62,7 @@ impl MainState {
 
 impl event::EventHandler for MainState {
     fn update(&mut self, ctx: &mut Context) -> GameResult {
-        const FPS: u32 = 1;
-        while timer::check_update_time(ctx, FPS) {
-            // let now = Instant::now();
-            self.planets.iter_mut().for_each(|planet| {
-                println!("{:?}", &planet.pos);
-                println!("{:?}", &planet.pos.x > &10_00_0.0 || &planet.pos.y > &10_000_.0);
-                self.quad_tree.update_pos(planet);
-                }
-            );
-
-            // println!("{:?}", now.elapsed());
-        }
+        self.planets.iter_mut().for_each(|planet| self.quad_tree.update_pos(planet));
         Ok(())
     }
 
@@ -101,12 +86,25 @@ impl event::EventHandler for MainState {
         Ok(())
     }
 }
+
+fn get_user_input() -> usize {
+    let mut num_bodies = String::new();
+    println!("How many bodies do you want to simulate?: ");
+    let buffer = stdin().read_line(&mut num_bodies).unwrap();
+    if let Ok(num_bodies) = num_bodies.trim().parse::<usize>() {
+        return num_bodies;
+    }
+    num_bodies.clear();
+    get_user_input()
+}
+
 fn main() -> GameResult {
     let context_builder = ggez::ContextBuilder::new("orbit", "Mac")
         .window_setup(ggez::conf::WindowSetup::default().title("N body simulator"))
         .window_mode(ggez::conf::WindowMode::default().dimensions(1000.0, 800.0));
     let (ctx, event_loop) =  context_builder.build()?;
-    let state = MainState::new();
+    // let state = MainState::new(get_user_input());
+    let state = MainState::new(NUM_BODIES);
     event::run(ctx, event_loop, state);
     Ok(())
 }
