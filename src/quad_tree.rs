@@ -4,7 +4,7 @@ use crate::Planet;
 const MAX_POINTS: usize = 1;
 const APPROXIMATION_DISTANCE_LIMIT: f32 = 0.5;
 const G: f32 = 6.67430e-11;
-const DELTA_TIME: f32 = 1.0;
+
 
 /*
 pub struct Vec2 {
@@ -39,16 +39,9 @@ impl Node {
             let net_force = G * planet.mass * self.contents[0].mass / (distance * distance);
             let force_components = Vec2::new(net_force * (taxicab_distance.x / distance), net_force * (taxicab_distance.y / distance));
             let acceleration_components = force_components / planet.mass;
-            planet.velocity += acceleration_components * DELTA_TIME;
-            if (distance - planet.velocity).x <= 3.0 || (distance - planet.velocity).y <= 3.0 {
-                let new_velocity = (planet.mass * planet.velocity + self.contents[0].mass * self.contents[0].velocity) / (planet.mass + self.contents[0].mass);
-                let new_pos = planet.pos + new_velocity * DELTA_TIME;
-                self.remove(planet);
-                planet.pos = new_pos;
-            } else {
-                self.remove(planet);
-                planet.pos -= planet.velocity * DELTA_TIME;
-            }
+            self.remove(planet);
+            planet.velocity += acceleration_components;
+            planet.pos -= planet.velocity;
             self.insert(*planet);
         } else if self.bounds.width / distance < APPROXIMATION_DISTANCE_LIMIT {
             let taxicab_distance = planet.pos - self.center_of_mass;
